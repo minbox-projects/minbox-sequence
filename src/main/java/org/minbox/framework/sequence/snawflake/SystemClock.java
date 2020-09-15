@@ -1,4 +1,4 @@
-package org.minbox.framework.sequence;
+package org.minbox.framework.sequence.snawflake;
 
 
 import java.sql.Timestamp;
