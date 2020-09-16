@@ -1,4 +1,4 @@
-package org.minbox.framework.sequence.id;
+package org.minbox.framework.sequence.id.snawflake;
 
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
