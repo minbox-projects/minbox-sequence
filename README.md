@@ -26,3 +26,9 @@ insert into leaf_alloc(biz_tag, max_id, step, description) values('leaf-segment-
 ```
 
 单元测试 IDGenServiceTest
+
+
+
+## SnawflakeGen 本地雪花
+
+创建 SnawflakeGen 对象即可，最好使用单例模式。单元测试类 SnowflakeIdWorkerTest
