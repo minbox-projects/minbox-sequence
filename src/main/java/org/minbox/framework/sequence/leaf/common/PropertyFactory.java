@@ -12,7 +12,7 @@ public class PropertyFactory {
 
     private static final Properties prop = new Properties();
 
-    public static String leafname;
+    public static String leafname = "leaf-snowflake";
     public static void setLeafName(String leafName){
         PropertyFactory.leafname=leafName;
     }

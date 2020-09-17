@@ -31,4 +31,15 @@ insert into leaf_alloc(biz_tag, max_id, step, description) values('leaf-segment-
 
 ## SnawflakeGen 本地雪花
 
-创建 SnawflakeGen 对象即可，最好使用单例模式。单元测试类 SnowflakeIdWorkerTest
+创建 SnawflakeGen 对象即可，最好使用单例模式。
+
+**配置 zookeeper 地址**
+
+该模式需要依赖 zookeeper
+
+```properties
+snawflake.name=default
+zk.list=127.0.0.1:2181
+snowflake.port=8688
+```
+
