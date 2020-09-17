@@ -1,6 +1,11 @@
-package org.minbox.framework.sequence;
+package org.minbox.framework.sequence.snawflake;
 
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+
+import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -18,7 +23,8 @@ import java.util.concurrent.ThreadLocalRandom;
  * @author lry
  * @version 3.0
  */
-public final class Sequence {
+@Slf4j
+public final class SnowflakeIdWorker {
 
     /**
      * 起始时间戳
@@ -67,13 +73,23 @@ public final class Sequence {
     private final boolean randomSequence;
     private final ThreadLocalRandom tlr = ThreadLocalRandom.current();
 
-    public Sequence(long dataCenterId) {
+    public SnowflakeIdWorker() {
+        long dataCenterId = getDataCenterId(31L);
+        this.workerId = getMaxWorkerId(dataCenterId, 31L);
+        this.dataCenterId = dataCenterId;
+        this.clock = false;
+        this.timeOffset = 5L;
+        this.randomSequence = false;
+    }
+
+    public SnowflakeIdWorker(long dataCenterId) {
         this(dataCenterId, 0x000000FF & getLastIPAddress(), false, 5L, false);
     }
 
-    public Sequence(long dataCenterId, boolean clock, boolean randomSequence) {
+    public SnowflakeIdWorker(long dataCenterId, boolean clock, boolean randomSequence) {
         this(dataCenterId, 0x000000FF & getLastIPAddress(), clock, 5L, randomSequence);
     }
+
 
     /**
      * 基于Snowflake创建分布式ID生成器
@@ -84,7 +100,7 @@ public final class Sequence {
      * @param timeOffset     允许时间回拨的毫秒量,建议5ms
      * @param randomSequence true表示使用毫秒内的随机序列(超过范围则取余)
      */
-    public Sequence(long dataCenterId, long workerId, boolean clock, long timeOffset, boolean randomSequence) {
+    public SnowflakeIdWorker(long dataCenterId, long workerId, boolean clock, long timeOffset, boolean randomSequence) {
         if (dataCenterId > MAX_DATA_CENTER_ID || dataCenterId < 0) {
             throw new IllegalArgumentException("Data Center Id can't be greater than " + MAX_DATA_CENTER_ID + " or less than 0");
         }
@@ -156,12 +172,12 @@ public final class Sequence {
          * 3.最后转换成10进制，就是最终生成的id
          */
         return (currentOffsetTime << TIMESTAMP_LEFT_SHIFT) |
-            // 数据中心位
-            (dataCenterId << DATA_CENTER_ID_SHIFT) |
-            // 工作ID位
-            (workerId << WORKER_ID_SHIFT) |
-            // 毫秒序列化位
-            sequence;
+                // 数据中心位
+                (dataCenterId << DATA_CENTER_ID_SHIFT) |
+                // 工作ID位
+                (workerId << WORKER_ID_SHIFT) |
+                // 毫秒序列化位
+                sequence;
     }
 
     /**
@@ -208,6 +224,39 @@ public final class Sequence {
         }
 
         return LAST_IP;
+    }
+
+    private long getDataCenterId(long maxDataCenterId) {
+        long id = 0L;
+
+        try {
+            InetAddress ip = InetAddress.getLocalHost();
+            NetworkInterface network = NetworkInterface.getByInetAddress(ip);
+            if (network == null) {
+                id = 1L;
+            } else {
+                byte[] mac = network.getHardwareAddress();
+                if (null != mac) {
+                    id = (255L & (long) mac[mac.length - 1] | 65280L & (long) mac[mac.length - 2] << 8) >> 6;
+                    id %= maxDataCenterId + 1L;
+                }
+            }
+        } catch (Exception e) {
+            log.error("getDatacenterId error", e);
+        }
+
+        return id;
+    }
+
+    private long getMaxWorkerId(long datacenterId, long maxWorkerId) {
+        StringBuilder mpid = new StringBuilder();
+        mpid.append(datacenterId);
+        String name = ManagementFactory.getRuntimeMXBean().getName();
+        if (StringUtils.isNotBlank(name)) {
+            mpid.append(name.split("@")[0]);
+        }
+
+        return (long) (mpid.toString().hashCode() & '\uffff') % (maxWorkerId + 1L);
     }
 
 }
