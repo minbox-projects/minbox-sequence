@@ -4,8 +4,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Properties;
 
+/**
+ * 加载 leaf.properties
+ */
 public class PropertyFactory {
 
     private static final Logger logger = LoggerFactory.getLogger(PropertyFactory.class);
@@ -18,8 +22,10 @@ public class PropertyFactory {
     }
 
     static {
-        try {
-            prop.load(PropertyFactory.class.getClassLoader().getResourceAsStream("leaf.properties"));
+        try (InputStream resourceAsStream = PropertyFactory.class.getClassLoader().getResourceAsStream("leaf.properties")) {
+            if (resourceAsStream != null) {
+                prop.load(resourceAsStream);
+            }
         } catch (IOException e) {
             logger.warn("Load Properties Ex", e);
         }
